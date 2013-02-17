@@ -122,7 +122,8 @@ function initBuffers() {
 
    var m4 = mat4.create();
    mat4.identity(m4);
-   var rr = makeSegmentRenderable(segment, m4, gl);
+   //var rr = makeSegmentRenderable(segment, m4, gl);
+   var rr = makeSegmentRenderable2(segment, gl);
    renderables.push(rr);
 }
 
@@ -135,8 +136,8 @@ function drawScene() {
    mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
 
    mat4.identity(mvMatrix);
-   mat4.translate(mvMatrix, [0, -5.7, -25.0]);
-   mat4.rotate(mvMatrix, Math. PI * (new Date()).getTime() / 1000, [0, 1, 0]);
+   mat4.translate(mvMatrix, [0, -10, -45.0]);
+   mat4.rotate(mvMatrix, Math. PI * (new Date()).getTime() / 5000, [0, 1, 0]);
 
    for (var renderable in renderables)
    {
@@ -158,7 +159,7 @@ function drawRenderable(renderable, viewMatrix)
 
    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, renderable.elementBufferPointer);
    setMatrixUniforms();
-   gl.drawElements(gl.TRIANGLES, renderable.elementBufferPointer.numItems, gl.UNSIGNED_SHORT, 0);
+   gl.drawElements(gl.TRIANGLE_STRIP, renderable.elementBufferPointer.numItems, gl.UNSIGNED_SHORT, 0);
 
    mvPopMatrix();
 }
