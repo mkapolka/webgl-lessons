@@ -124,7 +124,27 @@ function addSegmentToRenderable(vertexArray, elementArray, colorArray, rootIndex
    {
       addSegmentToRenderable(vertexArray, elementArray, colorArray, startIndex, templateVertices, segment.nextSegment, m, level+1);
    } else {
-      //TODO: Cap off
+      mat4.translate(m, [0, segment.segmentLength * .5, 0]);
+      var v = vec3.create();
+      v = mat4.multiplyVec3(m, v);
+      var topIndex = vertexArray.length;
+      vertexArray.push(v);
+
+      //Color
+      var c = Math.pow(.9, level);
+      colorArray.push([c,c,c,1]);
+
+      for (var i = 0; i < templateVertices.length - 1; i++)
+      {
+         var ni  = startIndex + (i % templateVertices.length - 1);
+         var ni1 = startIndex + ((i + 1) % templateVertices.length - 1);
+         elementArray.push(ni);
+         elementArray.push(topIndex);
+         elementArray.push(ni1);
+      }
+
+      //Degenerate
+      elementArray.push(elementArray[elementArray.length - 1]);
    }
 
    for (var branch in segment.branches)
@@ -151,14 +171,6 @@ function unpackArray(input)
    return output;
 }
 
-   /*var templateVertices = [
-      vec3.create([-1.0, 0.0, 0.0]),
-      vec3.create([-0.5, 0.0, 0.5]),
-      vec3.create([ 0.5, 0.0, 0.5]),
-      vec3.create([ 1.0, 0.0, 0.0]),
-      vec3.create([ 0.5, 0.0,-0.5]),
-      vec3.create([-0.5, 0.0,-0.5])
-   ];*/
 function makeTemplateVertices()
 {
    var templateVertices = [];
@@ -171,7 +183,7 @@ function makeTemplateVertices()
    return templateVertices;
 }
 
-function makeSegmentRenderable2(segment, glContext)
+function makeSegmentRenderable(segment, glContext)
 {
    var templateVertices = makeTemplateVertices();
 
@@ -203,6 +215,43 @@ function makeSegmentRenderable2(segment, glContext)
    return renderable;
 }
 
+function reuseRenderable(renderable, segment)
+{
+   var templateVertices = makeTemplateVertices();
+
+   var vertexArray = templateVertices.slice(0);
+   var elementArray = [];
+   var colorArray = [];
+   //Initialize color array
+   for (var i = 0; i < vertexArray.length; i++)
+   {
+      colorArray.push([1,1,1,1]);
+   }
+   var rootMatrix = mat4.create();
+   mat4.identity(rootMatrix);
+
+   addSegmentToRenderable(vertexArray, elementArray, colorArray, 0, templateVertices, segment, rootMatrix, 0);
+
+   var upColors = unpackArray(colorArray);
+   var upVerts = unpackArray(vertexArray);
+   var upElements = elementArray;
+   var upColors = unpackArray(colorArray);
+
+   renderable.setVertices(upVerts);
+   renderable.setElements(upElements);
+   renderable.setColors(upColors);
+
+   return renderable;
+}
+
+function reuseClick()
+{
+   console.log("hax");
+   var sp = makeTestParams();
+   var segment = generateSegment(null, sp);
+   var renderable = renderables[0];
+   reuseRenderable(renderable, segment);
+}
 </script>
 
 <style>
@@ -212,14 +261,18 @@ body {
 canvas {
    display: block;
    margin: 0 auto;
-   padding: 25px;
+}
+button {
+   display: block;
+   margin: 0 auto;
 }
 </style>
 </head>
 
 
 <body onload="webGLStart();">
-    <canvas id="lesson04-canvas" style="border: none;" width="900" height="900"></canvas>
+    <canvas id="lesson04-canvas" style="border: none;" width="700" height="700"></canvas>
+    <button onclick="reuseClick()">New Tree</button>
 </body>
 
 </html>

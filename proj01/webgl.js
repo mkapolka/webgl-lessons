@@ -107,23 +107,12 @@ function degToRad(degrees) {
 }
 
 function initBuffers() {
-   /*for (var i = 0; i < 10; i++)
-   {
-      var renderable = makeTestRenderable(gl);
-      mat4.rotate(renderable.mvMatrix, Math.PI * (i / 5), [0.0, 1.0, 0.0]);
-      mat4.translate(renderable.mvMatrix, [2.0, 0.0, 0.0]);
-      mat4.scale(renderable.mvMatrix, [0.3, 0.3, 0.3]);
-      mat4.rotate(renderable.mvMatrix, Math.PI * .5, [0.0, 1.0, 0.0]);
-      renderables.push(renderable);
-   }*/
-
    var params = makeTestParams();
    segment = generateSegment(null, params);
 
    var m4 = mat4.create();
    mat4.identity(m4);
-   //var rr = makeSegmentRenderable(segment, m4, gl);
-   var rr = makeSegmentRenderable2(segment, gl);
+   var rr = makeSegmentRenderable(segment, gl);
    renderables.push(rr);
 }
 
@@ -168,15 +157,18 @@ function Renderable(glContext)
 {
    this.glContext = glContext;
 
-   this.vertexBufferPointer = null;
-   this.colorBufferPointer = null;
-   this.elementBufferPointer = null;
+   //this.vertexBufferPointer = null;
+   //this.colorBufferPointer = null;
+   //this.elementBufferPointer = null;
+   this.vertexBufferPointer = gl.createBuffer();
+   this.colorBufferPointer = gl.createBuffer();
+   this.elementBufferPointer = gl.createBuffer();
 
    this.mvMatrix = null;
 
    this.setVertices = function(array)
    {
-      this.vertexBufferPointer = glContext.createBuffer();
+      //this.vertexBufferPointer = glContext.createBuffer();
       glContext.bindBuffer(glContext.ARRAY_BUFFER, this.vertexBufferPointer);
       glContext.bufferData(glContext.ARRAY_BUFFER, new Float32Array(array), glContext.STATIC_DRAW);
       this.vertexBufferPointer.itemSize = 3;
@@ -185,7 +177,7 @@ function Renderable(glContext)
 
    this.setColors = function(array)
    {
-      this.colorBufferPointer = glContext.createBuffer();
+      //this.colorBufferPointer = glContext.createBuffer();
       glContext.bindBuffer(glContext.ARRAY_BUFFER, this.colorBufferPointer);
       glContext.bufferData(glContext.ARRAY_BUFFER, new Float32Array(array), glContext.STATIC_DRAW);
       this.colorBufferPointer.itemSize = 4;
@@ -194,7 +186,7 @@ function Renderable(glContext)
 
    this.setElements = function(array)
    {
-      this.elementBufferPointer = glContext.createBuffer();
+      //this.elementBufferPointer = glContext.createBuffer();
       glContext.bindBuffer(glContext.ELEMENT_ARRAY_BUFFER, this.elementBufferPointer);
       glContext.bufferData(glContext.ELEMENT_ARRAY_BUFFER, new Uint16Array(array), glContext.STATIC_DRAW);
       this.elementBufferPointer.itemSize = 1;
@@ -208,13 +200,11 @@ var lastTime = 0;
 function animate() {
 }
 
-
 function tick() {
    requestAnimFrame(tick);
    drawScene();
    animate();
 }
-
 
 function webGLStart() {
    var canvas = document.getElementById("lesson04-canvas");
