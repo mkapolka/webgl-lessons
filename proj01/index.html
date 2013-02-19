@@ -35,7 +35,6 @@
 <script type="text/javascript" src="webgl.js"></script>
 <script type="text/javascript" src="trees.js"></script>
 <script type="text/javascript">
-//Test code
 function makeTestParams()
 {
    var params = new SegmentParameters();
@@ -56,174 +55,10 @@ function makeTestParams()
 
 var segment;
 
-function countNumSegments(segment){
-   var output;
-   if (segment.nextSegment != null)
-   {
-      output = countNumSegments(segment.nextSegment) + 1;
-   } else {
-      output = 1;
-   }
-
-   for (var branch in segment.branches)
-   {
-      output += countNumSegments(branch);      
-   }
-
-   return output;
-}
-
-//Returns the maxiumum number of segments that follow this one
-//Before a leaf segment is found
-function countSegmentMaxHeight(segment)
-{
-   if (segment.nextSegment === null && segment.branches.length === 0)
-   {
-      return 1;
-   } else {
-      var max = 0;
-      if (segment.nextSegment != null)
-      {
-         max = countSegmentMaxHeight(segment.nextSegment) + 1;
-      } else {
-         max = 1;
-      }
-
-      for (var child in segment.branches)
-      {
-         var ch = countSegmentMaxHeight(segment.branches[child]);
-
-         if (ch > max)
-         {
-            max = ch;
-         }
-      }
-
-      return max;
-   }
-}
-
-function addSegmentToRenderable(vertexArray, elementArray, colorArray, rootIndexStart, templateVertices, segment, rootMatrix, level)
-{
-   var m = mat4.create();
-   mat4.set(rootMatrix, m);
-
-   var vUp = vec3.create();
-   vUp.set([0,1,0], vUp);
-   var vFor = vec3.create();
-   vFor.set([Math.cos(segment.direction), 0, Math.sin(segment.direction)], vFor);
-   var vRot = vec3.cross(vUp, vFor);
-
-   //mat4.scale(m, [.7, 1, .7]);
-   mat4.rotate(m, segment.angle, vRot);
-   mat4.translate(m, [0, segment.segmentLength, 0]);
-
-   var startIndex = vertexArray.length;
-
-   var scaleMatrix = mat4.create();
-   mat4.identity(scaleMatrix);
-   //mat4.scale(scaleMatrix, [Math.pow(.6, level), 1, Math.pow(.6, level)]);
-   mat4.scale(scaleMatrix, [Math.pow(.6, 9 - countSegmentMaxHeight(segment)), 1, Math.pow(.6, 9 - countSegmentMaxHeight(segment))]);
-   //Add vertices
-   for (var i in templateVertices)
-   {
-      //Vertex Location
-      var v = vec3.create(templateVertices[i]);
-      v = mat4.multiplyVec3(scaleMatrix, v);
-      v = mat4.multiplyVec3(m, v);
-      vertexArray.push(v);
-
-      //Color
-      var c = Math.pow(.9, level);
-      colorArray.push([c,c,c,1]);
-   }
-
-   //Elements
-   for (var i = 0; i < templateVertices.length; i++)
-   {
-      elementArray.push(rootIndexStart + i);
-      elementArray.push(startIndex + i);
-   }
-   //loop around
-   elementArray.push(rootIndexStart);
-   elementArray.push(startIndex);
-   //Degenerate
-   elementArray.push(startIndex);
-
-   //Up first
-   if (segment.nextSegment != null)
-   {
-      addSegmentToRenderable(vertexArray, elementArray, colorArray, startIndex, templateVertices, segment.nextSegment, m, level+1);
-   }
-
-   for (var branch in segment.branches)
-   {
-      //discontinuous degenerate
-      elementArray.push(rootIndexStart);
-      elementArray.push(rootIndexStart);
-      addSegmentToRenderable(vertexArray, elementArray, colorArray, rootIndexStart, templateVertices, segment.branches[branch], rootMatrix, level);
-   }
-}
-
-function unpackArray(input)
-{
-   var output = [];
-
-   for (var child in input)
-   {
-      for (var i = 0; i < input[child].length; i++)
-      {
-         output.push(input[child][i]);
-      }
-   }
-
-   return output;
-}
-
-function makeTemplateVertices()
-{
-   var templateVertices = [];
-
-   for (var i = 0; i < 6; i++)
-   {
-      templateVertices.push(vec3.create([Math.cos(i * Math.PI / 3), 0, Math.sin(i * Math.PI / 3)]));
-   }
-
-   return templateVertices;
-}
-
-function makeSegmentRenderable(segment, glContext)
-{
-   var templateVertices = makeTemplateVertices();
-
-   var vertexArray = templateVertices.slice(0);
-   var elementArray = [];
-   var colorArray = [];
-   //Initialize color array
-   for (var i = 0; i < vertexArray.length; i++)
-   {
-      colorArray.push([1,1,1,1]);
-   }
-   var rootMatrix = mat4.create();
-   mat4.identity(rootMatrix);
-
-   var renderable = new Renderable(glContext);
-   renderable.mvMatrix = rootMatrix;
-
-   addSegmentToRenderable(vertexArray, elementArray, colorArray, 0, templateVertices, segment, rootMatrix, 0);
-
-   var upColors = unpackArray(colorArray);
-   var upVerts = unpackArray(vertexArray);
-   var upElements = elementArray;
-   var upColors = unpackArray(colorArray);
-
-   renderable.setVertices(upVerts);
-   renderable.setElements(upElements);
-   renderable.setColors(upColors);
-
-   return renderable;
-}
-
+//Takes a renderable and re-builds the tree based on a new segment
+//This method exists because I don't know how to clear allocated WebGL buffers yet,
+//but I assume (hope) that if you call gl.bufferData on a buffer it'll clear the existing data
+//before it pushes the new data.
 function reuseRenderable(renderable, segment)
 {
    var templateVertices = makeTemplateVertices();
@@ -255,7 +90,6 @@ function reuseRenderable(renderable, segment)
 
 function reuseClick()
 {
-   console.log("hax");
    var sp = makeTestParams();
    var segment = generateSegment(null, sp);
    var renderable = renderables[0];
