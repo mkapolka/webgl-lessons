@@ -73,6 +73,36 @@ function countNumSegments(segment){
    return output;
 }
 
+//Returns the maxiumum number of segments that follow this one
+//Before a leaf segment is found
+function countSegmentMaxHeight(segment)
+{
+   if (segment.nextSegment === null && segment.branches.length === 0)
+   {
+      return 1;
+   } else {
+      var max = 0;
+      if (segment.nextSegment != null)
+      {
+         max = countSegmentMaxHeight(segment.nextSegment) + 1;
+      } else {
+         max = 1;
+      }
+
+      for (var child in segment.branches)
+      {
+         var ch = countSegmentMaxHeight(segment.branches[child]);
+
+         if (ch > max)
+         {
+            max = ch;
+         }
+      }
+
+      return max;
+   }
+}
+
 function addSegmentToRenderable(vertexArray, elementArray, colorArray, rootIndexStart, templateVertices, segment, rootMatrix, level)
 {
    var m = mat4.create();
@@ -92,7 +122,8 @@ function addSegmentToRenderable(vertexArray, elementArray, colorArray, rootIndex
 
    var scaleMatrix = mat4.create();
    mat4.identity(scaleMatrix);
-   mat4.scale(scaleMatrix, [Math.pow(.6, level), 1, Math.pow(.6, level)]);
+   //mat4.scale(scaleMatrix, [Math.pow(.6, level), 1, Math.pow(.6, level)]);
+   mat4.scale(scaleMatrix, [Math.pow(.6, 9 - countSegmentMaxHeight(segment)), 1, Math.pow(.6, 9 - countSegmentMaxHeight(segment))]);
    //Add vertices
    for (var i in templateVertices)
    {
@@ -123,28 +154,6 @@ function addSegmentToRenderable(vertexArray, elementArray, colorArray, rootIndex
    if (segment.nextSegment != null)
    {
       addSegmentToRenderable(vertexArray, elementArray, colorArray, startIndex, templateVertices, segment.nextSegment, m, level+1);
-   } else {
-      mat4.translate(m, [0, segment.segmentLength * .5, 0]);
-      var v = vec3.create();
-      v = mat4.multiplyVec3(m, v);
-      var topIndex = vertexArray.length;
-      vertexArray.push(v);
-
-      //Color
-      var c = Math.pow(.9, level);
-      colorArray.push([c,c,c,1]);
-
-      for (var i = 0; i < templateVertices.length - 1; i++)
-      {
-         var ni  = startIndex + (i % templateVertices.length - 1);
-         var ni1 = startIndex + ((i + 1) % templateVertices.length - 1);
-         elementArray.push(ni);
-         elementArray.push(topIndex);
-         elementArray.push(ni1);
-      }
-
-      //Degenerate
-      elementArray.push(elementArray[elementArray.length - 1]);
    }
 
    for (var branch in segment.branches)
