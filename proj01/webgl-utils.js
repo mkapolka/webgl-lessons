@@ -128,6 +128,8 @@ var setupWebGL = function(canvas, opt_attribs, opt_onError) {
   if (!context) {
     if (!window.WebGLRenderingContext) {
       opt_onError("");
+    } else {
+      opt_onError("");
     }
   }
   return context;
